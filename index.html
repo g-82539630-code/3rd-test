@@ -56,6 +56,10 @@
         .glow-badge-rose {
             box-shadow: 0 0 12px rgba(244, 63, 94, 0.2);
         }
+
+        #certificate-print-area, #certificate-print-area * {
+            font-family: Arial, Helvetica, sans-serif !important;
+        }
     </style>
 </head>
 <body class="text-slate-950 min-h-screen flex flex-col antialiased">
@@ -354,12 +358,17 @@
                     
                     <div class="space-y-4">
                         <h4 class="text-[9px] font-extrabold uppercase tracking-widest text-[#0B1528] text-left border-l-4 border-blue-600 pl-2">Purata Tahap Penguasaan Mengikut Subjek</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="cert-scores-grid"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn" id="cert-scores-grid"></div>
                     </div>
                     
                     <div class="space-y-4 text-left">
                         <h4 class="text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b pb-2">Senarai Prestasi Terperinci Mengikut Komponen</h4>
                         <div id="cert-detailed-records" class="divide-y divide-slate-100"></div>
+                    </div>
+
+                    <div id="cert-intervensi-section" class="space-y-3 text-left p-6 bg-slate-50 rounded-xl border border-slate-200 mt-6">
+                        <h4 class="text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b pb-2">Cadangan Intervensi Individu</h4>
+                        <p id="cert-intervensi-text" class="text-xs font-semibold text-slate-850 leading-relaxed italic"></p>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-12 text-center pt-10 border-t border-slate-200">
@@ -643,7 +652,7 @@ function doPost(e) {
                 { id: 'BM 1.1', type: 'Rekod Anekdot', desc: 'Mendengar dan memberi respons yang betul dalam pelbagai situasi.' },
                 { id: 'BM 2.1', type: 'Skala Kadar', desc: 'Bertutur secara jelas dan sopan dalam perbualan harian berdasarkan pelbagai situasi.' },
                 { id: 'BM 3.2', type: 'Senarai Semak', desc: 'Membaca dan memahami teks.', items: ["Mengecam bentuk huruf", "Mengecam vokal", "Membaca suku kata mudah"] },
-                { id: 'BM 4.2', type: 'Skala Kadar', desc: 'Boleh menyampaikan idea melalui simbol, lukisan dan penulisan.' }
+                { id: 'BM 4.2', type: 'Skala Kadar', desc: 'Boleh menyampaikan idea melalui simbol, lukisan and penulisan.' }
             ],
             BI: [
                 { id: 'BI 1.1', type: 'Rekod Anekdot', desc: 'Mendengar, memahami dan bertindak balas secara wajar mengikut situasi.' },
@@ -665,7 +674,7 @@ function doPost(e) {
                 { id: 'KE 1.1', type: 'Senarai Semak', desc: 'Menggunakan kreativiti dalam penghasilan karya seni visual.', items: ["Guna pelbagai bahan", "Mencampurkan warna", "Kemasan hasil seni"] },
                 { id: 'KE 1.2', type: 'Skala Kadar', desc: 'Menunjukkan minat muzik dan gerakan / Melakonkan watak drama.' },
                 { id: 'KE 2.1', type: 'Rekod Anekdot', desc: 'Melakonkan watak dalam drama.' },
-                { id: 'KE 2.2', type: 'Skala Kadar', desc: 'Menunjukkan minat kebolehan dalam muzik, gerakan & watak drama.' },
+                { id: 'KE 2.2', type: 'Skala Kadar', desc: 'Menunjukkan minat keboleh dalam muzik, gerakan & watak drama.' },
                 { id: 'KE 3.1', type: 'Skala Kadar', desc: 'Menunjukkan penghargaan terhadap karya seni.' }
             ],
             PI: [
@@ -718,7 +727,6 @@ function doPost(e) {
         let selectedFileType = '';
         let selectedFileName = '';
 
-        // AUTOMASI GOOGLE SHEETS
         function getApiUrl() {
             return localStorage.getItem('gsheet_url') || "";
         }
@@ -821,6 +829,17 @@ function doPost(e) {
             if (tabId === 'pelaporan') renderIndividualCertificate();
         }
 
+        function generateIntervensi(tahap_penguasaan, nama) {
+            if (tahap_penguasaan === "rendah") {
+                return "Murid " + nama + " memerlukan intervensi pemulihan seperti bimbingan individu, latihan asas dan pengulangan konsep.";
+            } else if (tahap_penguasaan === "sederhana") {
+                return "Murid " + nama + " disarankan mengikuti aktiviti pengukuhan seperti latihan tambahan dan perbincangan kumpulan kecil.";
+            } else if (tahap_penguasaan === "tinggi") {
+                return "Murid " + nama + " boleh diberikan aktiviti pengayaan seperti projek mini, pembelajaran kendiri dan cabaran lanjutan.";
+            }
+            return "Tiada cadangan intervensi buat masa ini.";
+        }
+
         function initApp() {
             loadFromLocalStorage();
             
@@ -848,7 +867,7 @@ function doPost(e) {
             onFormSubjectChange();
             updateApiStatusDisplay();
 
-            // Sediakan Input Nilai Awal untuk Google Sheets URL dari localStorage (GSHEET_URL)
+            // Sediakan Input Nilai Awal untuk Google Sheets URL dari localStorage
             const savedApiUrl = localStorage.getItem('gsheet_url');
             const apiUrlEl = document.getElementById('gdrive-api-url');
             if (apiUrlEl) {
@@ -1379,6 +1398,7 @@ function doPost(e) {
                 const allR = records.filter(r => r.studentName === st);
                 if (allR.length === 0) {
                     detList.innerHTML = '<p class="text-xs text-slate-400 py-8 italic text-center">Tiada rekod penilaian dijumpai bagi murid ini.</p>';
+                    safeSetText('cert-intervensi-text', "Tiada rekod penilaian bagi menjana cadangan intervensi.");
                     return;
                 }
                 allR.forEach(r => {
@@ -1394,6 +1414,21 @@ function doPost(e) {
                         <div class="${tpBadgeColor} px-2.5 py-1 rounded-lg border font-extrabold text-[10px] shrink-0">TP ${r.tp}</div>
                     </div>`;
                 });
+
+                let sumTp = 0;
+                allR.forEach(r => sumTp += r.tp);
+                const averageOverallTP = sumTp / allR.length;
+                let overallLevel = "sederhana";
+
+                if (averageOverallTP < 1.66) {
+                    overallLevel = "rendah";
+                } else if (averageOverallTP > 2.50) {
+                    overallLevel = "tinggi";
+                }
+
+                // Memaparkan hasil penjanaan fungsi generateIntervensi
+                const intervensiMessage = generateIntervensi(overallLevel, st);
+                safeSetText('cert-intervensi-text', intervensiMessage);
             }
             kemaskiniLogoTampilan();
             lucide.createIcons();
@@ -1442,7 +1477,9 @@ function doPost(e) {
         function openPrintWizard(targetType) {
             currentPrintTarget = targetType;
             const modal = document.getElementById('modal-print-wizard');
-            if (modal) modal.classList.remove('hidden');
+            if (modal) modal.classList.add('hidden');
+            const wizard = document.getElementById('modal-print-wizard');
+            if (wizard) wizard.classList.remove('hidden');
         }
 
         function closePrintWizard() {
@@ -1537,11 +1574,11 @@ function doPost(e) {
                         <title>${docTitle}</title>
                         <script src="https://cdn.tailwindcss.com"><\/script>
                         <script src="https://unpkg.com/lucide@latest"><\/script>
-                        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
                         <style>
-                            body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: white !important; color: black !important; padding: 30px; }
+                            body { font-family: Arial, Helvetica, sans-serif !important; background-color: white !important; color: black !important; padding: 30px; }
                             .serif-title { font-family: 'Playfair Display', Georgia, serif; }
                             @media print { .no-print { display: none !important; } }
+                            * { font-family: Arial, Helvetica, sans-serif !important; }
                         </style>
                     </head>
                     <body>
